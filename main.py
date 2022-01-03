@@ -1,22 +1,29 @@
 import boto3
 
+from constants import STACK_ACTIVE_STATUSES
 
-def get_active_stacks_ids() -> list:
+
+def get_stacks_ids(deleted: bool = False) -> list:
     """
-    Return the list of current running CloudFormation stacks ids.
+    Return the list of current active or deleted CloudFormation stacks ids (ARNs).
+    Note: Deleted stacks are keep in CloudFormation history for 90 days.
     """
+    if deleted:
+        stack_statuses: list = ['DELETE_COMPLETE']
+    else:
+        stack_statuses: list = STACK_ACTIVE_STATUSES
     client = boto3.client('cloudformation')
     response = client.list_stacks(
-        StackStatusFilter=[
-            'CREATE_IN_PROGRESS',
-            'CREATE_COMPLETE'
-        ]
+        StackStatusFilter=stack_statuses
     )
     stack_ids = [stack['StackId'] for stack in response['StackSummaries']]
     return stack_ids
 
 
 def check_stack_status(stack_id: str, active_stacks_ids: list) -> bool:
+    """
+    Check whether provided CloudFormation stack id is active.
+    """
     return stack_id in active_stacks_ids
 
 
@@ -62,6 +69,7 @@ def get_buckets_without_cf_tag(buckets_data: list) -> list:
 
 
 if __name__ == '__main__':
+    print(get_stacks_ids(deleted=True))
     buckets_data = get_buckets(tag_key='Project', tag_value='memes-generator')
     bucket_names = get_buckets_without_cf_tag(buckets_data=buckets_data)
     print(bucket_names)
