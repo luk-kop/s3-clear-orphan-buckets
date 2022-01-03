@@ -50,6 +50,31 @@ def get_buckets(tag_key: str, tag_value: str) -> list:
     return matching_buckets
 
 
+def empty_bucket(bucket_name: str) -> None:
+    """
+    Empty S3 bucket - also with versioning enabled.
+    """
+    s3 = boto3.resource('s3')
+    s3_bucket = s3.Bucket(bucket_name)
+    bucket_versioning = s3.BucketVersioning(bucket_name)
+    if bucket_versioning.status == 'Enabled':
+        s3_bucket.object_versions.delete()
+    else:
+        s3_bucket.objects.all().delete()
+
+
+def delete_bucket(bucket_name: str) -> None:
+    """
+    Delete S3 bucket with provided name.
+    """
+    s3 = boto3.resource('s3')
+    s3_bucket = s3.Bucket(bucket_name)
+    # Empty bucket before deletion
+    empty_bucket(bucket_name=bucket_name)
+    s3_bucket.delete()
+    print(f'S3 bucket "{bucket_name}" deleted.')
+
+
 def get_buckets_without_cf_tag(buckets_data: list) -> list:
     """
     Returns list of bucket names without CloudFormation stack-id tag assigned.
@@ -68,8 +93,16 @@ def get_buckets_without_cf_tag(buckets_data: list) -> list:
     return matching_buckets_names
 
 
-if __name__ == '__main__':
-    print(get_stacks_ids(deleted=True))
-    buckets_data = get_buckets(tag_key='Project', tag_value='memes-generator')
+def main(tag_key='Project', tag_value='memes-generator'):
+    """
+    Script's main func.
+    """
+    buckets_data = get_buckets(tag_key=tag_key, tag_value=tag_value)
     bucket_names = get_buckets_without_cf_tag(buckets_data=buckets_data)
-    print(bucket_names)
+    for bucket_name in bucket_names:
+        delete_bucket(bucket_name=bucket_name)
+
+
+if __name__ == '__main__':
+    # Run script's main func
+    main(tag_key='Project', tag_value='memes-generator')
