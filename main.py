@@ -93,16 +93,19 @@ def get_buckets_without_cf_tag(buckets_data: list) -> list:
     return matching_buckets_names
 
 
-def main(tag_key='Project', tag_value='memes-generator'):
+def main(action: str, tag_key='Project', tag_value='memes-generator'):
     """
     Script's main func.
     """
     buckets_data = get_buckets(tag_key=tag_key, tag_value=tag_value)
     bucket_names = get_buckets_without_cf_tag(buckets_data=buckets_data)
     for bucket_name in bucket_names:
-        delete_bucket(bucket_name=bucket_name)
+        if action == 'delete':
+            delete_bucket(bucket_name=bucket_name)
+        else:
+            print(f'S3 bucket "{bucket_name}" is orphaned.')
 
 
 if __name__ == '__main__':
     # Run script's main func
-    main(tag_key='Project', tag_value='memes-generator')
+    main(action='list', tag_key='Project', tag_value='find-orphan')
