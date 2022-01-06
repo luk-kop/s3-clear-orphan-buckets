@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "Project",
+        "ParameterValue": "find-orphan"
+    },
+    {
+        "ParameterKey": "Stage",
+        "ParameterValue": "dev"
+    },
+    {
+        "ParameterKey": "BucketName",
+        "ParameterValue": "dummy-2"
+    }
+]
