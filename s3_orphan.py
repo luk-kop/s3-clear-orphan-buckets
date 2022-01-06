@@ -1,9 +1,12 @@
+import argparse
+import sys
+
 import boto3
 
 from constants import STACK_ACTIVE_STATUSES
 
 
-def get_stacks_ids(deleted: bool = False) -> list:
+def get_stacks_ids(aws_region: str, deleted: bool = False) -> list:
     """
     Return the list of current active or deleted CloudFormation stacks ids (ARNs).
     Note: Deleted stacks are keep in CloudFormation history for 90 days.
@@ -12,7 +15,7 @@ def get_stacks_ids(deleted: bool = False) -> list:
         stack_statuses: list = ['DELETE_COMPLETE']
     else:
         stack_statuses: list = STACK_ACTIVE_STATUSES
-    client = boto3.client('cloudformation')
+    client = boto3.client('cloudformation', region_name=aws_region)
     response = client.list_stacks(
         StackStatusFilter=stack_statuses
     )
@@ -93,11 +96,14 @@ def get_buckets_without_cf_tag(buckets_data: list) -> list:
     return matching_buckets_names
 
 
-def main(action: str, tag_key='Project', tag_value='memes-generator'):
+def main(action: str, tag_key: str, tag_value: str):
     """
     Script's main func.
     """
     buckets_data = get_buckets(tag_key=tag_key, tag_value=tag_value)
+    if not buckets_data:
+        print('Nothing to do...')
+        sys.exit(1)
     bucket_names = get_buckets_without_cf_tag(buckets_data=buckets_data)
     for bucket_name in bucket_names:
         if action == 'delete':
@@ -107,5 +113,29 @@ def main(action: str, tag_key='Project', tag_value='memes-generator'):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='The orphan S3 bucket finder',
+        usage='s3_orphan.py [-h] {list,delete} -k TAG_KEY -v TAG_VALUE'
+    )
+    # Positional argument
+    parser.add_argument('action',
+                        choices=['list', 'delete'],
+                        help='action performed on a found S3 bucket')
+    parser.add_argument('-k',
+                        '--tag-key',
+                        type=str,
+                        required=True,
+                        help='perform action on S3 buckets with specified tag key')
+    parser.add_argument('-v',
+                        '--tag-value',
+                        type=str,
+                        required=True,
+                        help='perform action on S3 buckets with specified tag value')
+    # Parse arguments
+    args = parser.parse_args()
+    action_argument = args.action
+    tag_key_argument = args.tag_key
+    tag_value_argument = args.tag_value
+
     # Run script's main func
-    main(action='list', tag_key='Project', tag_value='find-orphan')
+    main(action=action_argument, tag_key=tag_key_argument, tag_value=tag_value_argument)
