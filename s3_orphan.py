@@ -78,33 +78,43 @@ def delete_bucket(bucket_name: str) -> None:
     print(f'S3 bucket "{bucket_name}" deleted.')
 
 
-def get_buckets_without_cf_tag(buckets_data: list) -> list:
+def get_buckets_without_key_tag(buckets_data: list, tag_key: str) -> list:
     """
-    Returns list of bucket names without CloudFormation stack-id tag assigned.
+    Returns list of bucket names without specified tag key assigned.
     """
     matching_buckets_names = []
-    cf_tag_key = 'aws:cloudformation:stack-id'
     for bucket in buckets_data:
         bucket_name = bucket['name']
         bucket_tags = bucket['tags']
         stack_id_tag_present = False
         for tag in bucket_tags:
-            if tag['Key'] == cf_tag_key:
+            if tag['Key'] == tag_key:
                 stack_id_tag_present = True
         if not stack_id_tag_present:
             matching_buckets_names.append(bucket_name)
     return matching_buckets_names
 
 
-def main(action: str, tag_key: str, tag_value: str):
+def exit_script() -> None:
+    """
+    exit the script if there is no relevant data.
+    """
+    print('Nothing to do...')
+    sys.exit(1)
+
+
+def main(action: str, tag_key: str, tag_value: str) -> None:
     """
     Script's main func.
     """
     buckets_data = get_buckets(tag_key=tag_key, tag_value=tag_value)
     if not buckets_data:
-        print('Nothing to do...')
-        sys.exit(1)
-    bucket_names = get_buckets_without_cf_tag(buckets_data=buckets_data)
+        exit_script()
+    # CloudFormation stack-id tag key (system tag)
+    cf_tag_key = 'aws:cloudformation:stack-id'
+    bucket_names = get_buckets_without_key_tag(buckets_data=buckets_data, tag_key=cf_tag_key)
+    if not bucket_names:
+        exit_script()
     for bucket_name in bucket_names:
         if action == 'delete':
             delete_bucket(bucket_name=bucket_name)
