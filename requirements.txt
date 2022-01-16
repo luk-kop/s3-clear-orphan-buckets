@@ -20,7 +20,6 @@ MarkupSafe==2.0.1
 moto==2.3.0
 networkx==2.6.3
 packaging==21.3
-pkg_resources==0.0.0
 pluggy==1.0.0
 py==1.11.0
 pycparser==2.21

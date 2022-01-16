@@ -4,6 +4,11 @@ from s3_orphan import get_buckets, get_stacks_ids
 
 
 def test_get_stacks_ids_active_stack(cloudformation_stack):
+    """
+    GIVEN
+    WHEN
+    THEN
+    """
     stack_ids = get_stacks_ids(aws_region='eu-west-1')
     assert stack_ids
     assert len(stack_ids) == 1
