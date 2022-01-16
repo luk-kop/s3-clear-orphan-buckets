@@ -1,0 +1,105 @@
+name: Test s3_orphan script
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo & check out code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install libraries
+        run: pip install flake8
+
+      - name: Lint with flake8
+        run: |
+          cd function
+          # Select identifies which ERRORS should cause the job to fail
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # The exit zero flag will show errors as WARNINGS and not fail the run
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  test:
+    runs-on: ubuntu-latest
+    env:
+      TAG_KEY: Project
+      TAG_VALUE: find-orphan
+      AWS_REGION: eu-west-1
+    needs: lint
+    steps:
+      - name: Clone repo & check out code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install libraries
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run unit tests
+        run: pytest
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy dummy CloudFormation stacks with two S3 buckets
+        run: |
+          cd cloudformation/
+          ./deploy_stacks.sh $TAG_KEY $TAG_VALUE
+
+      - name: Verify that S3 buckets have been created by CloudFormation
+        run: |
+          result=$(python list_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
+          if [ "$result" == "[]" ]; then exit 1; fi
+
+      - name: Delete dummy CloudFormation stacks (Retain S3 buckets)
+        if: always()
+        run: |
+          cd cloudformation/
+          ./delete_stacks.sh $TAG_KEY $TAG_VALUE
+
+      - name: Verify that S3 buckets exist after deleting CloudFormation stacks
+        run: |
+          result=$(python list_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
+          if [ "$result" == "[]" ]; then exit 1; fi
+
+      - name: Run s3_orphan.py script with list option - buckets that meet the requirements
+        run: |
+          result=$(python s3_orphan.py list -k $TAG_KEY -v $TAG_VALUE)
+          if [ "$result" == "Nothing to do..." ]; then exit 1; fi
+
+      - name: Run s3_orphan.py script with delete option - buckets that meet the requirements
+        run: |
+          result=$(python s3_orphan.py delete -k $TAG_KEY -v $TAG_VALUE)
+          if [ "$result" == "Nothing to do..." ]; then exit 1; fi
+
+      - name: Run s3_orphan.py script with list option - no buckets that meet the requirements
+        run: |
+          result=$(python s3_orphan.py list -k $TAG_KEY -v $TAG_VALUE)
+          if [ "$result" != "Nothing to do..." ]; then exit 1; fi
+
+      - name: verify that S3 buckets do not exist after running the s3_orphan.py delete command
+        run: |
+          result=$(python list_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
+          if [ "$result" != "[]" ]; then exit 1; fi
+
+
+
