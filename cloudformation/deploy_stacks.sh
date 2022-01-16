@@ -1,8 +1,22 @@
 #!/bin/bash
 
-PROJECT="find-orphan"
+
 STAGE="dev"
 REGION="eu-west-1"
+
+if [[ $# -eq 0 ]]
+then
+  TAG_KEY="Project"
+  TAG_VALUE="find-orphan"
+elif [[ $# -eq 2 ]]
+then
+  TAG_KEY=$1
+  TAG_VALUE=$2
+else
+  echo "usage: ./deploy_stack.sh [TAG_KEY] [TAG_VALUE]"
+  echo "default: TAG_KEY=Project & TAG_VALUE=find-orphan"
+  exit 1
+fi
 
 buckets=()
 
@@ -10,7 +24,7 @@ for var in 1 2
 do
   STACK="dummy-bucket-${var}"
   TEMPLATE="bucket"
-  STACK_NAME="${PROJECT}-${STACK}-${STAGE}"
+  STACK_NAME="${TAG_VALUE}-${STACK}-${STAGE}"
 
   TEMPLATE_FILE="templates/${TEMPLATE}.yaml"
   PARAM_FILE="parameters/${STACK}-${STAGE}.json"
@@ -21,7 +35,7 @@ do
       --no-fail-on-empty-changeset \
       --parameter-overrides file://${PARAM_FILE} \
       --region ${REGION} \
-      --tags Project=$PROJECT Stage=${STAGE}"
+      --tags ${TAG_KEY}=${TAG_VALUE} Stage=${STAGE}"
 
   echo ">>> Deploying stack: ${STACK_NAME} <<<"
   $deploy
@@ -45,5 +59,5 @@ do
   echo " - ${bucket}"
 done
 echo "Tags to use:"
-echo " - Project = ${PROJECT}"
+echo " - ${TAG_KEY} = ${TAG_VALUE}"
 echo " - Stage = ${STAGE}"
