@@ -65,7 +65,7 @@ jobs:
 
       - name: Verify that S3 buckets have been created by CloudFormation
         run: |
-          result=$(python list_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
+          result=$(python list_s3_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
           if [ "$result" == "[]" ]; then exit 1; fi
 
       - name: Delete dummy CloudFormation stacks (Retain S3 buckets)
@@ -76,27 +76,27 @@ jobs:
 
       - name: Verify that S3 buckets exist after deleting CloudFormation stacks
         run: |
-          result=$(python list_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
+          result=$(python list_s3_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
           if [ "$result" == "[]" ]; then exit 1; fi
 
       - name: Run s3_orphan.py script with list option - buckets that meet the requirements
         run: |
           result=$(python s3_orphan.py list -k $TAG_KEY -v $TAG_VALUE)
-          if [ "$result" == "Nothing to do..." ]; then exit 1; fi
+          if [[ "$result" =~ ^Nothing.* ]]; then exit 1; fi
 
       - name: Run s3_orphan.py script with delete option - buckets that meet the requirements
         run: |
           result=$(python s3_orphan.py delete -k $TAG_KEY -v $TAG_VALUE)
-          if [ "$result" == "Nothing to do..." ]; then exit 1; fi
+          if [[ "$result" =~ ^Nothing.* ]]; then exit 1; fi
 
       - name: Run s3_orphan.py script with list option - no buckets that meet the requirements
         run: |
           result=$(python s3_orphan.py list -k $TAG_KEY -v $TAG_VALUE)
-          if [ "$result" != "Nothing to do..." ]; then exit 1; fi
+          if [[ ! "$result" =~ ^Nothing.* ]]; then exit 1; fi
 
-      - name: verify that S3 buckets do not exist after running the s3_orphan.py delete command
+      - name: Verify that S3 buckets do not exist after running the s3_orphan.py delete command
         run: |
-          result=$(python list_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
+          result=$(python list_s3_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
           if [ "$result" != "[]" ]; then exit 1; fi
 
 

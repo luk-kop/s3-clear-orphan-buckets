@@ -100,7 +100,7 @@ def exit_script() -> None:
     exit the script if there is no relevant data.
     """
     print('Nothing to do...')
-    sys.exit(1)
+    sys.exit()
 
 
 def main(action: str, tag_key: str, tag_value: str) -> None:
