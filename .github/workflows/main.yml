@@ -30,8 +30,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      TAG_KEY: Project
-      TAG_VALUE: find-orphan
+      TAG_KEY: Test
+      TAG_VALUE: test-value
       AWS_REGION: eu-west-1
     needs: lint
     steps:
@@ -98,6 +98,13 @@ jobs:
         run: |
           result=$(python list_s3_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE)
           if [ "$result" != "[]" ]; then exit 1; fi
+
+      - name: Destroy test S3 buckets
+        # Even if a previous step in this job fails, this step will be executed
+        if: always()
+        run: |
+          python list_s3_buckets_by_tag.py -k $TAG_KEY -v $TAG_VALUE > buckets.json
+          if [ "$(cat buckets.json)" != "[]" ]; then for bucket in $(jq -r '.[]' buckets.json); do aws s3 rb s3://$bucket --force ; done; fi
 
 
 
