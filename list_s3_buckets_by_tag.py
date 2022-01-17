@@ -1,4 +1,5 @@
 import argparse
+import json
 
 from s3_orphan import get_buckets
 
@@ -35,4 +36,4 @@ if __name__ == '__main__':
 
     # Run script's main func
     bucket_names = get_bucket_names(tag_key=tag_key_argument, tag_value=tag_value_argument)
-    print(bucket_names)
+    print(json.dumps(bucket_names))
