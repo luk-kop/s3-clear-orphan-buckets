@@ -1,4 +1,4 @@
-name: Test s3_orphan script
+name: Test main
 
 on:
   push:
