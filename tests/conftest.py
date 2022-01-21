@@ -140,3 +140,66 @@ def s3_buckets(s3_client):
             }
         )
     yield
+
+
+@fixture
+def s3_bucket_with_data(s3_client):
+    """
+    Dummy s3 buckets with objects.
+    """
+    bucket_name = 'test-orphan-project-objects'
+    bucket_tag = {
+        'Key': 'Project',
+        'Value': 'test-objects'
+    },
+    # Create bucket
+    s3_client.create_bucket(
+        Bucket=bucket_name,
+        CreateBucketConfiguration={
+            'LocationConstraint': 'eu-west-1'
+        }
+    )
+    # Add tags
+    s3_client.put_bucket_tagging(
+        Bucket=bucket_name,
+        Tagging={
+            'TagSet': bucket_tag
+        }
+    )
+    # Add objects to bucket
+    object_binary_data = b'The quick brown fox jumps over the lazy dog'
+    objects_keys = ['test/object-one', 'test/object-two']
+    for object_key in objects_keys:
+        s3_client.put_object(
+            Body=object_binary_data,
+            Bucket=bucket_name,
+            Key=object_key
+        )
+    yield bucket_name
+
+
+@fixture
+def s3_bucket_empty(s3_client):
+    """
+    Dummy empty s3 buckets.
+    """
+    bucket_name = 'test-orphan-project-empty'
+    bucket_tag = {
+        'Key': 'Project',
+        'Value': 'test-no-objects'
+    },
+    # Create bucket
+    s3_client.create_bucket(
+        Bucket=bucket_name,
+        CreateBucketConfiguration={
+            'LocationConstraint': 'eu-west-1'
+        }
+    )
+    # Add tags
+    s3_client.put_bucket_tagging(
+        Bucket=bucket_name,
+        Tagging={
+            'TagSet': bucket_tag
+        }
+    )
+    yield bucket_name

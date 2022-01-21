@@ -7,7 +7,7 @@
 
 
 > The **S3 clear orphan buckets** is a simple script that allows you to find and delete S3 buckets that remain after deleting the Cloud Formation stacks with which they were created.
-> This situation occurs when `DeletionPolicy` on S3 bucket in the Cloud Formation template is set to `Retain`.
+> This situation occurs when `DeletionPolicy` on S3 bucket object in the Cloud Formation template is set to `Retain`.
 
 ## Features
 - The script only performs actions on S3 buckets with a specific tag (key & value) and after deleting the Cloud Formation stack they were part of. 
