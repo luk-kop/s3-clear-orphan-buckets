@@ -13,7 +13,7 @@ then
   TAG_KEY=$1
   TAG_VALUE=$2
 else
-  echo "usage: ./deploy_stack.sh [TAG_KEY] [TAG_VALUE]"
+  echo "usage: $0 [TAG_KEY] [TAG_VALUE]"
   echo "default: TAG_KEY=Project & TAG_VALUE=find-orphan"
   exit 1
 fi
